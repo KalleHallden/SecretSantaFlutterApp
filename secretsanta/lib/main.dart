@@ -5,6 +5,7 @@ void main() => runApp(MyApp());
 var greenColor = new Color.fromRGBO(15, 158, 56, 1);
 var redColor = new Color.fromRGBO(191, 30, 30, 1);
 List<String> members = [];
+var guess = new Map();
 
 class MyApp extends StatelessWidget {
   @override
@@ -33,32 +34,34 @@ class MyAppState extends State<SecretSantaList> {
           title: new Text('Secret Santa'),
           backgroundColor: redColor,
           textTheme: TextTheme(title: TextStyle(
-            fontSize: 30,
+            fontSize: 20,
             fontFamily: "Avenir",
             fontWeight: FontWeight.bold,
             color: Colors.white
           )),
+          actions: <Widget>[
+            startButton()
+          ],
+          
         ),
         body: 
-          buildMemberList(),
+          buildMemberList(),      
           floatingActionButton: new FloatingActionButton(
           tooltip: 'Add member',
           onPressed: () {
-          pushAddTodoScreen();
+            for (String member in members) {
+              pushStartToScreen(member);
+            }
           },
+             
         
-        child: new Icon(Icons.add),
+        child: new Icon(Icons.play_arrow),
         foregroundColor: redColor,
         backgroundColor: Colors.white,
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       ),
     theme: ThemeData(
-    // Define the default Brightness and Colors
-    brightness: Brightness.light,
-    primaryColor: Colors.lightBlue[800],
-    accentColor: Colors.yellow[600],
-    hintColor: redColor,
     
     // Define the default Font Family
     fontFamily: 'Avenir next',
@@ -85,25 +88,27 @@ class MyAppState extends State<SecretSantaList> {
 
 Widget startButton() {
   return new FlatButton( 
-    child: new Text('Start'),
-            onPressed: () {
-              print("Hello");
-            }
+    child: new Icon(Icons.add, color: Colors.white),
+    onPressed: () {
+          pushAddTodoScreen();
+    },
   );
 }
 
 Widget buildMemberList() {
-    return new ListView.builder(
-      itemBuilder: (context, index) {
-        // itemBuilder will be automatically be called as many times as it takes for the
-        // list to fill up its available space, which is most likely more than the
-        // number of todo items we have. So, we need to check the index is OK.
-
-        if(index < members.length) {
-          return buildMember(members[index], index);
-        }
-      }
-    );
+  return new ListView.builder(
+           itemBuilder: (context, index) {
+            // itemBuilder will be automatically be called as many times as it takes for the
+            // list to fill up its available space, which is most likely more than the
+            // number of todo items we have. So, we need to check the index is OK.
+            if(index < members.length) {
+              return buildMember(
+                members[index], 
+                index
+                );
+            }
+          }
+        );
   }
 
    Widget buildMember(String todoText, int index) {
@@ -120,6 +125,59 @@ Widget buildMemberList() {
       onLongPress: () => promptRemoveMember(index),
     );
   }
+
+void pushStartToScreen(String member) {
+  // Push this page onto the stack
+  Navigator.of(context).push(
+    // MaterialPageRoute will automatically animate the screen entry, as well
+    // as adding a back button to close it
+    new MaterialPageRoute (
+      builder: (context) {
+        return new Scaffold(
+          backgroundColor: Colors.white,
+          appBar: new AppBar(
+            backgroundColor: redColor,
+            title: new Text('Vem tror du att ${member}s present\n är till egentligen?', textAlign: TextAlign.center)
+          ),
+          body: new TextField(
+            autofocus: true,
+            style: TextStyle(
+            fontSize: 20,
+            fontFamily: "Avenir",
+            color: redColor
+            ),
+            onSubmitted: (val) {
+              print(val);
+              guess[member] = val;
+              Navigator.pop(context); // Close the add todo screen
+            },
+            decoration: new InputDecoration(
+              hintText: 'Skriv in namn på deltagare..',
+              contentPadding: const EdgeInsets.all(16.0),
+              focusedBorder: UnderlineInputBorder(      
+                      borderSide: BorderSide(color: redColor),   
+                ),    
+            ),
+          ),
+          floatingActionButton: new FloatingActionButton(
+
+            tooltip: 'Next member',
+            onPressed: () {
+            Navigator.pop(context);// Close the add todo screen
+          },
+             
+        
+        child: new Icon(Icons.arrow_forward),
+        foregroundColor: Colors.white,
+        backgroundColor: redColor,
+
+          ),
+          floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+        );
+      }
+    )
+  );
+}
 
 void pushAddTodoScreen() {
   // Push this page onto the stack
@@ -169,19 +227,36 @@ void promptRemoveMember(int index) {
     context: context,
     builder: (BuildContext context) {
       return new AlertDialog(
-        title: new Text('Vill du ta bort ${members[index]} från listan?'),
+        title: new Text('Vill du ta bort ${members[index]} från listan?', style: TextStyle(
+              fontSize: 20,
+              fontFamily: "Avenir",
+              fontWeight: FontWeight.bold,
+              color: greenColor
+              ),
+            ),
         actions: <Widget>[
           new FlatButton(
-            child: new Text('AVBRYT'),
+            child: new Text('avbryt', style: TextStyle(
+              fontSize: 20,
+              fontFamily: "Avenir",
+              color: redColor
+              ),
+            ),
             onPressed: () => Navigator.of(context).pop()
           ),
           new FlatButton(
-            child: new Text('TA BORT'),
+            child: new Text('delete', style: TextStyle(
+              fontSize: 20,
+              fontFamily: "Avenir",
+              fontWeight: FontWeight.bold,
+              color: redColor
+              ),
+            ),
             onPressed: () {
               removeMember(index);
               Navigator.of(context).pop();
             }
-          )
+          ),
         ]
       );
     }
