@@ -4,8 +4,7 @@ void main() => runApp(MyApp());
 
 var greenColor = new Color.fromRGBO(15, 158, 56, 1);
 var redColor = new Color.fromRGBO(191, 30, 30, 1);
-List<String> members = [];
-var guess = new Map();
+List<Member> members = [];
 
 class MyApp extends StatelessWidget {
   @override
@@ -17,11 +16,45 @@ class MyApp extends StatelessWidget {
   }
 }
 
+class Member {
+  String name;
+  Present present;
+
+  Member(String name, Present present) {
+    this.name = name;
+    this.present = present;
+  }
+}
+
+ class Present {
+  Present() {
+    print("New present was made");
+  }
+  var listOfGuesses = new Map();
+  void makeGuess(Member member) {
+    if (listOfGuesses.containsKey(member)) {
+      var numOfGuesses = listOfGuesses[member];
+      listOfGuesses[member] = numOfGuesses += 1;
+      print("Another vote for " + member.name);
+    } else {
+      if (members.contains(member)) {
+        print("New member " + member.name + " added to guess list");
+        listOfGuesses[member] = 1;
+      }
+    }
+  }
+
+  int getGuessesForMember(Member member) {
+    if (listOfGuesses.containsKey(member)) {
+      return listOfGuesses[member];
+    }
+  }
+}
+
 class SecretSantaList extends StatefulWidget {
   @override
   createState() => new MyAppState();
 }
-
 
 class MyAppState extends State<SecretSantaList> {
   @override
@@ -32,6 +65,7 @@ class MyAppState extends State<SecretSantaList> {
         backgroundColor: redColor,
         appBar: new AppBar(
           title: new Text('Secret Santa'),
+          centerTitle: false,
           backgroundColor: redColor,
           textTheme: TextTheme(title: TextStyle(
             fontSize: 20,
@@ -40,7 +74,8 @@ class MyAppState extends State<SecretSantaList> {
             color: Colors.white
           )),
           actions: <Widget>[
-            startButton()
+            startButton(),
+            getResultButton()
           ],
           
         ),
@@ -49,8 +84,8 @@ class MyAppState extends State<SecretSantaList> {
           floatingActionButton: new FloatingActionButton(
           tooltip: 'Add member',
           onPressed: () {
-            for (String member in members) {
-              pushStartToScreen(member);
+            for (Member member in members) {
+              pushStartToScreen(member.name);
             }
           },
              
@@ -76,11 +111,10 @@ class MyAppState extends State<SecretSantaList> {
     )
     );
   }
-  
-  void addMember(String member) {
-  
-  if (member.length > 0) {
+  void addMember(String memberName) {
+  if (memberName.length > 0) {
     setState(() {
+      Member member = new Member(memberName, new Present());
       members.add(member);
     });
   }
@@ -91,6 +125,24 @@ Widget startButton() {
     child: new Icon(Icons.add, color: Colors.white),
     onPressed: () {
           pushAddTodoScreen();
+    },
+  );
+}
+Widget getResultButton() {
+  return new FlatButton( 
+    child: new Icon(Icons.assessment, color: Colors.white),
+    onPressed: () {
+          // fo revery member get all guesses in the list
+          for (Member member in members) {
+            print("För " + member.name + "´s present");
+            for (Member memberInList in members) {
+              String name = memberInList.name;
+              String numGuesses = member.present.getGuessesForMember(memberInList).toString();
+              if (numGuesses != null) {
+                print("Antal som gissade " + name + " var: " + numGuesses);
+              }
+            }
+          }
     },
   );
 }
@@ -111,13 +163,13 @@ Widget buildMemberList() {
         );
   }
 
-   Widget buildMember(String todoText, int index) {
+   Widget buildMember(Member member, int index) {
     return new ListTile(
       title: new Text(
-        todoText,
+        member.name,
         textAlign: TextAlign.center,
         style: TextStyle(
-            fontSize: 20,
+            fontSize: 30,
             fontFamily: "Avenir",
             color: Colors.white
           ),
@@ -137,7 +189,9 @@ void pushStartToScreen(String member) {
           backgroundColor: Colors.white,
           appBar: new AppBar(
             backgroundColor: redColor,
-            title: new Text('Vem tror du att ${member}s present\n är till egentligen?', textAlign: TextAlign.center)
+            title: new Text('Vem tror du att ${member}s present\n är till egentligen?', style: TextStyle(
+              fontSize: 20
+            ), textAlign: TextAlign.center)
           ),
           body: new TextField(
             autofocus: true,
@@ -148,7 +202,17 @@ void pushStartToScreen(String member) {
             ),
             onSubmitted: (val) {
               print(val);
-              guess[member] = val;
+              Member memberToUse;
+              Member memberGuessed;
+              for (Member memberT in members) {
+                if (memberT.name == member) {
+                  memberToUse = memberT;
+                }
+                if (memberT.name == val) {
+                  memberGuessed = memberT;
+                }
+              }
+              memberToUse.present.makeGuess(memberGuessed);
               Navigator.pop(context); // Close the add todo screen
             },
             decoration: new InputDecoration(
@@ -163,6 +227,7 @@ void pushStartToScreen(String member) {
 
             tooltip: 'Next member',
             onPressed: () {
+            
             Navigator.pop(context);// Close the add todo screen
           },
              
@@ -178,7 +243,6 @@ void pushStartToScreen(String member) {
     )
   );
 }
-
 void pushAddTodoScreen() {
   // Push this page onto the stack
   Navigator.of(context).push(
@@ -195,7 +259,7 @@ void pushAddTodoScreen() {
           body: new TextField(
             autofocus: true,
             style: TextStyle(
-            fontSize: 20,
+            fontSize: 30,
             fontFamily: "Avenir",
             color: redColor
             ),
