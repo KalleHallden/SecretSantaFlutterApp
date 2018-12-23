@@ -5,6 +5,12 @@ void main() => runApp(MyApp());
 var greenColor = new Color.fromRGBO(15, 158, 56, 1);
 var redColor = new Color.fromRGBO(191, 30, 30, 1);
 List<Member> members = [];
+var textStyleRedLarge = TextStyle(
+                  fontSize: 30,
+                  fontFamily: "Avenir",
+                  fontWeight: FontWeight.bold,
+                  color: redColor,
+                  );
 
 class MyApp extends StatelessWidget {
   @override
@@ -227,6 +233,13 @@ Widget buildMemberList() {
 
 void pushStartToScreen(String member) {
   // Push this page onto the stack
+  List<String> listOfNames = [];
+  
+  for (Member member in members) {
+    listOfNames.add(member.name);
+  }
+
+
   Navigator.of(context).push(
     // MaterialPageRoute will automatically animate the screen entry, as well
     // as adding a back button to close it
@@ -237,39 +250,57 @@ void pushStartToScreen(String member) {
           appBar: new AppBar(
             backgroundColor: redColor,
             automaticallyImplyLeading: false,
-            title: new Text('Vem tror du att ' + member + '´s present\n är till egentligen?', style: TextStyle(
+            title: new Text('Gissa presenten', style: TextStyle(
               fontSize: 15
-            ), textAlign: TextAlign.center)
+            ), textAlign: TextAlign.center),
+            centerTitle: true,
           ),
-          body: new TextField(
-            autofocus: true,
-            style: TextStyle(
-            fontSize: 20,
-            fontFamily: "Avenir",
-            color: redColor
-            ),
-            onSubmitted: (val) {
-              print(val);
-              Member memberToUse;
-              Member memberGuessed;
-              for (Member memberT in members) {
-                if (memberT.name == member) {
-                  memberToUse = memberT;
+          body: new Container(
+            child: new Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: <Widget>[
+                  new Text('Vem tror du att ' + member + '´s present\när till egentligen?', style: textStyleRedLarge, textAlign: TextAlign.center,),
+                  new DropdownButton<String>(
+                  items: listOfNames.map((String value) {
+                  return new DropdownMenuItem<String>(
+                    value: value,
+                    child: new Text(value, style: 
+                    TextStyle(
+                      fontSize: 20,
+                      fontFamily: "Avenir",
+                      fontWeight: FontWeight.bold,
+                      color: greenColor,
+                    )),
+                  );
+                }).toList(),
+                hint: Text("Välj den du tror", style: 
+                TextStyle(
+                  fontSize: 20,
+                  fontFamily: "Avenir",
+                  fontWeight: FontWeight.bold,
+                  color: redColor,
+                  )
+                ),
+                onChanged: (selectedMember) {
+                  print(selectedMember);
+                  Member memberToUse;
+                  Member memberGuessed;
+                  for (Member memberT in members) {
+                    if (memberT.name == member) {
+                      memberToUse = memberT;
+                  }
+                  if (memberT.name == selectedMember) {
+                    memberGuessed = memberT;
+                  }
                 }
-                if (memberT.name == val) {
-                  memberGuessed = memberT;
-                }
-              }
-              memberToUse.present.makeGuess(memberGuessed);
-              Navigator.pop(context); // Close the add todo screen
-            },
-            decoration: new InputDecoration(
-              hintText: 'Skriv in namn på deltagare..',
-              contentPadding: const EdgeInsets.all(16.0),
-              focusedBorder: UnderlineInputBorder(      
-                      borderSide: BorderSide(color: redColor),   
-                ),    
+                memberToUse.present.makeGuess(memberGuessed);
+                Navigator.pop(context); // Close the add todo screen
+              },
             ),
+          ],
+          )
+          )
           ),
           floatingActionButton: new FloatingActionButton(
 
