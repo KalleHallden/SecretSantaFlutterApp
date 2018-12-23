@@ -134,12 +134,19 @@ Widget getResultButton() {
     onPressed: () {
           // fo revery member get all guesses in the list
           for (Member member in members) {
-            print("För " + member.name + "´s present");
+            mostNumGuesses = 0;
+            pushResultToScreen(member);
             for (Member memberInList in members) {
               String name = memberInList.name;
-              String numGuesses = member.present.getGuessesForMember(memberInList).toString();
+              int numGuesses = member.present.getGuessesForMember(memberInList);
+              int nonNullNum = 0;
               if (numGuesses != null) {
-                print("Antal som gissade " + name + " var: " + numGuesses);
+                nonNullNum = numGuesses;
+              }
+              if (nonNullNum > mostNumGuesses) {
+                mostNumGuesses = nonNullNum;
+                print("\nMost num of guesses: " + mostNumGuesses.toString());
+                listOfMostGuessed[member] = name;
               }
             }
           }
@@ -161,6 +168,46 @@ Widget buildMemberList() {
             }
           }
         );
+  }
+
+  Widget buildResultMemberList(member) {
+  return new ListView.builder(
+           itemBuilder: (context, index) {
+              mostNumGuesses = 0;
+            // itemBuilder will be automatically be called as many times as it takes for the
+            // list to fill up its available space, which is most likely more than the
+            // number of todo items we have. So, we need to check the index is OK.
+            if(index < members.length) {
+              return buildResultMember(
+                members[index], 
+                index,
+                member
+                );
+            }
+          }
+        );
+  }
+     var mostNumGuesses = 0;
+     var listOfMostGuessed = new Map();
+
+     Widget buildResultMember(Member member, int index, Member originalMember) {
+       var numGuessForMember = originalMember.present.getGuessesForMember(member);
+       var nonNullGuessNum = 0;
+       if (numGuessForMember != null) {
+         nonNullGuessNum = numGuessForMember;
+       }
+    return new ListTile(
+      title: new Text(
+        member.name + ": " + nonNullGuessNum.toString(),
+
+        textAlign: TextAlign.center,
+        style: TextStyle(
+            fontSize: 30,
+            fontFamily: "Avenir",
+            color: Colors.white
+          ),
+        ),
+    );
   }
 
    Widget buildMember(Member member, int index) {
@@ -189,8 +236,9 @@ void pushStartToScreen(String member) {
           backgroundColor: Colors.white,
           appBar: new AppBar(
             backgroundColor: redColor,
-            title: new Text('Vem tror du att ${member}s present\n är till egentligen?', style: TextStyle(
-              fontSize: 20
+            automaticallyImplyLeading: false,
+            title: new Text('Vem tror du att ' + member + '´s present\n är till egentligen?', style: TextStyle(
+              fontSize: 15
             ), textAlign: TextAlign.center)
           ),
           body: new TextField(
@@ -243,6 +291,57 @@ void pushStartToScreen(String member) {
     )
   );
 }
+
+void pushResultToScreen(Member member) {
+  // Push this page onto the stack
+  Navigator.of(context).push(
+    // MaterialPageRoute will automatically animate the screen entry, as well
+    // as adding a back button to close it
+    new MaterialPageRoute (
+      builder: (context) {
+        return new Scaffold(
+        backgroundColor: greenColor,
+        appBar: new AppBar(
+          title: new Text('Presenten som ' + member.name + ' fick:'),
+          centerTitle: true,
+          backgroundColor: greenColor,
+          automaticallyImplyLeading: false,
+          textTheme: TextTheme(title: TextStyle(
+            fontSize: 20,
+            fontFamily: "Avenir",
+            fontWeight: FontWeight.bold,
+            color: Colors.white
+          )),
+          
+        ),
+        body: 
+          buildResultMemberList(member),    
+          floatingActionButton: new FloatingActionButton(
+          tooltip: 'Add member',
+          onPressed: () {
+            if (listOfMostGuessed[member] != null) {
+              print("The person most guessed was: " + listOfMostGuessed[member]);
+              promptWhoShouldGetThePresent(listOfMostGuessed[member], context, member);
+              // Navigator.pop(context);
+            } else {
+               Navigator.pop(context);
+            }
+          },
+             
+        
+        child: new Icon(Icons.arrow_forward),
+        foregroundColor: greenColor,
+        backgroundColor: Colors.white,
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      );
+      }
+    )
+  );
+}
+
+
+
 void pushAddTodoScreen() {
   // Push this page onto the stack
   Navigator.of(context).push(
@@ -285,13 +384,53 @@ void removeMember(int index) {
   setState(() => members.removeAt(index));
 }
 
+// Show an alert dialog telling the user who was most voted for
+void promptWhoShouldGetThePresent(String name, BuildContext newContext, Member member) {
+  int numGuesses;
+  for (Member memberT in members) {
+    if (memberT.name == listOfMostGuessed[member]) {
+      numGuesses = member.present.getGuessesForMember(memberT);
+    }
+  }
+
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return new AlertDialog(
+        title: new Text('Personen som borde få presenten är: ' + name  + '\nMed totalt: ' + numGuesses.toString() + ' antal röster.', style: TextStyle(
+              fontSize: 20,
+              fontFamily: "Avenir",
+              fontWeight: FontWeight.bold,
+              color: greenColor
+              ),
+            ),
+          actions: <Widget>[
+            new FlatButton(
+            child: new Text('Nästa', style: TextStyle(
+              fontSize: 20,
+              fontFamily: "Avenir",
+              fontWeight: FontWeight.bold,
+              color: greenColor,
+              ),
+            ),
+            onPressed: () {
+              Navigator.of(context).pop();
+              Navigator.pop(newContext);
+            }
+          ),
+          ],
+      );
+    }
+  );
+}
+
 // Show an alert dialog asking the user to confirm that the task is done
 void promptRemoveMember(int index) {
   showDialog(
     context: context,
     builder: (BuildContext context) {
       return new AlertDialog(
-        title: new Text('Vill du ta bort ${members[index]} från listan?', style: TextStyle(
+        title: new Text('Vill du ta bort ${members[index].name} från listan?', style: TextStyle(
               fontSize: 20,
               fontFamily: "Avenir",
               fontWeight: FontWeight.bold,
